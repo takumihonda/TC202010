@@ -1,8 +1,9 @@
 import numpy as np
 from netCDF4 import Dataset
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import os
+import sys
 
 from mpl_toolkits.basemap import Basemap
 import matplotlib.colors as mcolors
@@ -131,3 +132,78 @@ def read_gfs_mslp_grads( time=datetime( 2020, 9, 5, 0, 0 ) ):
     infile.close
 
     return( input2d )
+
+def read_LIDEN( time=datetime( 2020, 9, 5, 0, 0 ) ):
+
+
+    top = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/TC202010/LIDEN/raw_data" 
+    fn_npz = os.path.join( top, time.strftime('liden%Y%m%d.npz') )
+    
+    try:
+       data = np.load( fn_npz, allow_pickle=True )
+       return( data["lons"], data["lats"], data["times"] )
+    except:
+       print( "make npz from csv")
+
+       import csv
+       fn = os.path.join( top, time.strftime('liden%Y%m%d.csv') )
+   
+       times = [] 
+       lons = []
+       lats = []
+       print( fn )
+       with open( fn ) as f:
+           reader = csv.reader( f )
+           for line in reader:
+               d = int( line[0] ) 
+               m = int( line[1] )
+               y = int( line[2] )
+               h = int( line[3] )
+               n = int( line[4] )
+               s = int( line[5] )
+               lat = int( line[10] ) 
+               lon = int( line[11] ) 
+               times.append( datetime( year=y, month=m, day=d, hour=h, minute=n, second=s ) )
+               lons.append( lon )
+               lats.append( lat )
+   
+       lons = np.array( lons ) / 10000.0
+       lats = np.array( lats ) / 10000.0
+       times = np.array( times )
+   
+       np.savez( fn_npz, lons=lons, lats=lats, times=times )
+   
+       return( lons, lats, times )
+
+def read_LIDEN_all( ):
+
+    top = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/TC202010/LIDEN/raw_data" 
+    fn_npz = os.path.join( top, 'liden_all.npz' )
+
+    try:
+       data = np.load( fn_npz, allow_pickle=True )
+       return( data["lons"], data["lats"], data["times"] )
+    except:
+       print( "make npz from csv")
+
+       stime = datetime( 2020, 9, 3, 0 )
+       etime = datetime( 2020, 9, 7, 0 )
+
+
+       time = stime
+       while time <= etime:
+          lons_, lats_, times_ = read_LIDEN( time=time )
+
+          if time > stime:
+             lons = np.append( lons, lons_ )
+             lats = np.append( lats, lats_ )
+             times = np.append( times, times_ )
+          else:
+             lons = np.copy( lons_ )
+             lats = np.copy( lats_ )
+             times = np.copy( times_ )
+          time += timedelta( days=1 )
+
+       np.savez( fn_npz, lons=lons, lats=lats, times=times )
+   
+       return( lons, lats, times )
