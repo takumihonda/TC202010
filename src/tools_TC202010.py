@@ -8,6 +8,9 @@ from mpl_toolkits.basemap import Basemap
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 
+nx_gfs = 720
+ny_gfs = 361
+
 
 def prep_proj_multi( method="merc", ax_l=[], res="c", ll_lon=120, ur_lon=155, ll_lat=15, ur_lat=50,
                      blon=135, blat=35, lat2=40,
@@ -95,3 +98,36 @@ def plot_or_save( quick=True, opath="png", ofig="fig" ):
        print(ofig)
        plt.show()
 
+def get_gfs_grads_latlon():
+   lon = np.arange(   0.0, 360.0, 0.5 )
+   lat = np.arange( -90.0,  90.5, 0.5 )
+   lon2d, lat2d = np.meshgrid( lon,lat )
+
+   if len( lon ) != nx_gfs or len( lat ) != ny_gfs:
+      print( "Wrong GFS lat/lon")
+      sys.exit()
+  
+   return( lon2d, lat2d )
+
+def read_gfs_mslp_grads( time=datetime( 2020, 9, 5, 0, 0 ) ):
+    top = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/TC202010/ncepgfs"
+
+    fn = top + time.strftime('/%Y%m%d%H/sfc_%Y%m%d%H%M%S.grd')
+
+    try:
+       infile = open( fn )
+    except:
+       print( fn )
+       print("Failed to open")
+       sys.exit()
+
+    count = nx_gfs * ny_gfs
+
+    rec = 0
+    infile.seek( rec*4 )
+    tmp2d = np.fromfile( infile, dtype=np.dtype('>f4'), count=count )
+    input2d = np.reshape(tmp2d, (ny_gfs,nx_gfs) )
+    input2d[ input2d == 9.999e20 ] = np.nan 
+    infile.close
+
+    return( input2d )

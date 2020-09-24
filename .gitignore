@@ -130,3 +130,5 @@ dmypy.json
 
 *.png
 src/png
+log*
+LIDEN/*

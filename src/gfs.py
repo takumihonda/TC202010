@@ -1,13 +1,14 @@
 import numpy as np
+import sys
 from datetime import datetime
 from datetime import timedelta
 
 import matplotlib.pyplot as plt
 
-from tools_TC202010 import read_Him8_obs, cmap_Him8, prep_proj_multi, plot_cbar, plot_or_save
+from tools_TC202010 import prep_proj_multi, plot_cbar, plot_or_save, get_gfs_grads_latlon, read_gfs_mslp_grads
 
 quick = True
-quick = False
+#quick = False
 
 lons = 120
 lone = 155
@@ -16,10 +17,11 @@ lats = 15
 late = 50
 
 
-def main( time=datetime( 2020, 9, 5, 0, 0 ), band=13 ):
+def main( time=datetime( 2020, 9, 5, 0, 0 ), ):
 
-    tbb, lon1d, lat1d = read_Him8_obs( time=time, band=band )
-    lon2d, lat2d = np.meshgrid( lon1d, lat1d )
+    lon2d, lat2d = get_gfs_grads_latlon()
+
+    mslp = read_gfs_mslp_grads( time=time )
     
     fig, ax1 = plt.subplots( 1, 1, figsize=( 8, 6.5 ) )
     fig.subplots_adjust( left=0.02, bottom=0.03, right=0.98, top=0.95,
@@ -32,7 +34,7 @@ def main( time=datetime( 2020, 9, 5, 0, 0 ), band=13 ):
     
     ax_l = [ ax1] #
     m_l = prep_proj_multi( method='merc', ax_l=ax_l, ll_lon=lons, ur_lon=lone,
-                           ll_lat=lats, ur_lat=late, fs=7, cc='lime', cw=0.3 )
+                           ll_lat=lats, ur_lat=late, fs=7, cc='gray', cw=0.3 )
     
     x2d, y2d = m_l[0](lon2d, lat2d)
     
@@ -40,15 +42,16 @@ def main( time=datetime( 2020, 9, 5, 0, 0 ), band=13 ):
     #tbb = tbb[ ( lon2d >= lons ) & (lon2d <= lone ) & ( lat2d >= lats ) & ( lat2d <= late ) ]
     #
     #print( tbb.shape )
+    levs = np.arange( 800, 1100, 4 )
+    fac = 1.e-2    
+    lw =0.5
+
+    cont = ax1.contour( x2d, y2d, mslp*fac,
+                     levels=levs, linewidths=lw, colors='k' )
     
-    cmap, levs = cmap_Him8()
-    
-    shade = ax1.contourf( x2d, y2d, tbb, cmap=cmap,
-                     levels=levs, extend='both' )
-    
-    plot_cbar( ax1, shade=shade, fig=fig )
-    
-    ptit = "Himawari-8 B{0:0=2}".format( band )
+    ax1.clabel( cont, fmt='%1.0f', fontsize=8, )
+
+    ptit = "GFS Analysis: MSLP (hPa)"
     
     ax1.text( 0.5, 1.01, ptit,
               fontsize=13, transform=ax1.transAxes,
@@ -56,31 +59,27 @@ def main( time=datetime( 2020, 9, 5, 0, 0 ), band=13 ):
               va='bottom',
              )
     
-    ctime = time.strftime('%H:%M UTC %m/%d/%Y')
+    ctime = time.strftime('%HUTC %m/%d/%Y')
     ax1.text( 1.0, 1.01, ctime,
               fontsize=10, transform=ax1.transAxes,
               ha="right",
               va='bottom',
              )
     
-    ofig = "Him8_B{0:0=2}_{1:}".format( band, time.strftime('%Y%m%d%H%M'), )
-    plot_or_save( quick=quick, opath="png/Him8", ofig=ofig )   
+    ofig = "GFS_MSLP_{0:}".format( time.strftime('%Y%m%d%H%M'), )
+    plot_or_save( quick=quick, opath="png/gfs_mslp", ofig=ofig )   
 
 ###########
 time = datetime( 2020, 9, 5, 0, 0 )
 
 stime = datetime( 2020, 9, 1, 0, 0 )
-etime = datetime( 2020, 9, 6, 12, 0 )
+etime = datetime( 2020, 9, 7, 12, 0 )
 
-band = 8
-#band = 9
-#band = 13
-
-dh = 1
-#etime = stime
+stime = datetime( 2020, 9, 5, 18, 0 )
+etime = stime
 
 time = stime
 while time <= etime:
-   main( time=time, band=band )
-   time += timedelta( hours=dh )
+   main( time=time, )
+   time += timedelta( hours=6 )
 
