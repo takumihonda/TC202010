@@ -70,14 +70,13 @@ def main( time=datetime( 2020, 9, 5, 0, 0 ), band=13, liden_min=60 ):
 
     lxs, lys = m_l[0](llons, llats)
     lxs[ ( ltimes < lstime ) | ( ltimes > time ) ] = np.nan
-    ax1.scatter( lxs, lys, s=2, c='yellow',edgecolors='w',
+    ax1.scatter( lxs, lys, s=2, c='yellow', edgecolors='k',
                   linewidths=0.1, marker='o' )
    
     ofig = "Him8_B{0:0=2}_{1:}_LIDEN{2:0=3}min".format( band, time.strftime('%Y%m%d%H%M'), liden_min )
     plot_or_save( quick=quick, opath="png/Him8_LIDEN", ofig=ofig )   
 
 ###########
-time = datetime( 2020, 9, 5, 0, 0 )
 
 stime = datetime( 2020, 9, 3, 1, 0 )
 etime = datetime( 2020, 9, 6, 12, 0 )

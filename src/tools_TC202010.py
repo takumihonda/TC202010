@@ -12,6 +12,13 @@ import matplotlib.pyplot as plt
 nx_gfs = 720
 ny_gfs = 361
 
+def read_nc( nvar="MSLP", fn="" ):
+
+    nc = Dataset( fn, "r", format="NETCDF4" )
+    var = nc.variables[nvar][:]
+    nc.close()
+
+    return( var )
 
 def prep_proj_multi( method="merc", ax_l=[], res="c", ll_lon=120, ur_lon=155, ll_lat=15, ur_lat=50,
                      blon=135, blat=35, lat2=40,
