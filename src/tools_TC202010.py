@@ -214,3 +214,34 @@ def read_LIDEN_all( ):
        np.savez( fn_npz, lons=lons, lats=lats, times=times )
    
        return( lons, lats, times )
+
+def read_obs_letkf( time ):
+    otop = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/TC202010/ncepobs"
+
+    fn = os.path.join( otop, "obs_" + time.strftime('%Y%m%d%H%M%S.dat') )
+    print(fn)
+
+    infile = open( fn )
+    data = np.fromfile( infile, dtype=np.dtype('>f4') )
+    infile.close
+
+    nobs = int( data.shape[0]/(8+2) ) # wk(8) + header + footer in one record
+    #obs_all = np.zeros((8,nobs))
+    #obs_all = data.reshape(10,nobs)
+    obs_all = data.reshape(nobs,10)
+
+    #head = [ "", "elm", "lon", "lat", "lev", "dat", "err", "typ", "dif", "" ]
+
+    return( obs_all[:,:] )
+
+def write_obs_letkf( obs=np.array( [] ), time=datetime(2020,9,1,0 ), foot="10min", OVERW=False ):
+    otop = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/TC202010/ncepobs_{0:}".format( foot) 
+
+    if OVERW:
+       os.makedirs(otop, exist_ok=True)
+   
+       fn = os.path.join( otop, "obs_" + time.strftime('%Y%m%d%H%M%S.dat') )
+       print(fn)
+   
+       obs_ = obs.flatten()
+       obs_.tofile( fn )
