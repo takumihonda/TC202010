@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from tools_TC202010 import prep_proj_multi, plot_cbar, plot_or_save, get_gfs_grads_latlon, read_gfs_mslp_grads, read_nc
 
 quick = True
-quick = False
+#quick = False
 
 lons = 120
 lone = 155
@@ -20,7 +20,8 @@ late = 50
 def main( stime=datetime( 2020, 9, 5, 0, 0 ), ftime=datetime( 2020, 9, 5, 0, 0 ) ):
 
 
-    fn = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/scale-5.4.1/OUTPUT/TC202010_D1/{0:}/fcst_sno_np00001/mean/p_history.pe000000.nc".format( stime.strftime('%Y%m%d%H%M%S') )
+#    fn = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/scale-5.4.1/OUTPUT/TC202010_D1/{0:}/fcst_sno_np00001/mean/p_history.pe000000.nc".format( stime.strftime('%Y%m%d%H%M%S') )
+    fn = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/scale-5.4.3/OUTPUT/TC2020/D1/{0:}/fcst_sno_np00001/mean/p_history.pe000000.nc".format( time.strftime('%Y%m%d%H%M%S') )
     time_d1 = read_nc( nvar="time", fn=fn )[:]
 
     fsec = int( ( ftime - stime ).total_seconds() )
@@ -117,6 +118,8 @@ stime = datetime( 2020, 9, 3, 0, 0 )
 #stime = datetime( 2020, 9, 4, 0, 0 )
 etime = datetime( 2020, 9, 8, 0, 0 )
 
+stime = datetime( 2020, 8, 27, 0, 0 )
+etime = stime
 
 time = stime
 while time <= etime:

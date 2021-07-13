@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from tools_TC202010 import read_Him8_obs, cmap_Him8, prep_proj_multi, plot_cbar, plot_or_save
 
 quick = True
-quick = False
+#quick = False
 
 lons = 120
 lone = 155

@@ -9,8 +9,14 @@ from mpl_toolkits.basemap import Basemap
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 
-nx_gfs = 720
-ny_gfs = 361
+import cartopy.crs as ccrs
+import matplotlib.ticker as mticker
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
+#nx_gfs = 720
+#ny_gfs = 361
+nx_gfs = 361
+ny_gfs = 281
 
 def read_nc( nvar="MSLP", fn="" ):
 
@@ -70,17 +76,20 @@ def read_Him8_obs( time=datetime( 2020, 9, 10, 0), band=13 ):
 
     return( tbb, lon1d, lat1d )
 
-def cmap_Him8():
+def cmap_Him8( vmin=200, vmax=300, dv=4, ucolor='gray', ocolor='k' ):
 
     colors1 = plt.cm.jet_r(np.linspace(0, 1, 128 ))
     colors2 = plt.cm.binary(np.linspace(0., 1, 128 )) # w/k
     colors = np.vstack((colors1, colors2))
     cmap = mcolors.LinearSegmentedColormap.from_list('my_colormap', colors)
-    levs = np.arange( 200, 304, 4 )    
+    levs = np.arange( vmin, vmax+dv, dv )    
+
+    cmap.set_under( ucolor, alpha=1.0 )
+    cmap.set_over( ocolor, alpha=1.0 )
 
     return( cmap, levs )
 
-def plot_cbar( ax=None, shade=None, fig=None, ori='vertical', fs=7 ):
+def plot_cbar( ax=None, shade=None, fig=None, ori='vertical', fs=7, levs=[] ):
 
     if fig is None:
        ax_cb=None
@@ -90,7 +99,7 @@ def plot_cbar( ax=None, shade=None, fig=None, ori='vertical', fs=7 ):
        cb_height = pos.height*0.9
        ax_cb = fig.add_axes( [pos.x1+0.005, pos.y1-cb_height, cb_width, cb_height] )
     cb = plt.colorbar( shade, cax=ax_cb,
-                       orientation=ori, ) #ticks=levs[::2] )
+                       orientation=ori, ticks=levs[::] )
     cb.ax.tick_params( labelsize=fs )
 
 def plot_or_save( quick=True, opath="png", ofig="fig" ):
@@ -107,8 +116,10 @@ def plot_or_save( quick=True, opath="png", ofig="fig" ):
        plt.show()
 
 def get_gfs_grads_latlon():
-   lon = np.arange(   0.0, 360.0, 0.5 )
-   lat = np.arange( -90.0,  90.5, 0.5 )
+#   lon = np.arange(   0.0, 360.0, 0.5 )
+#   lat = np.arange( -90.0,  90.5, 0.5 )
+   lon = np.arange(  90.0, 90+0.25*nx_gfs, 0.25 )
+   lat = np.arange( 0.0,  0.25*ny_gfs, 0.25 )
    lon2d, lat2d = np.meshgrid( lon,lat )
 
    if len( lon ) != nx_gfs or len( lat ) != ny_gfs:
@@ -118,9 +129,10 @@ def get_gfs_grads_latlon():
    return( lon2d, lat2d )
 
 def read_gfs_mslp_grads( time=datetime( 2020, 9, 5, 0, 0 ) ):
-    top = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/TC202010/ncepgfs"
+#    top = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/TC202010/ncepgfs"
+    top = "/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/scale-5.4.3/OUTPUT/TC2020/D1/ncepgfs_grads_0.25"
 
-    fn = top + time.strftime('/%Y%m%d%H/sfc_%Y%m%d%H%M%S.grd')
+    fn = top + time.strftime('/%Y%m%d%H%M%S/mean/sfc_%Y%m%d%H%M%S.grd')
 
     try:
        infile = open( fn )
@@ -245,3 +257,107 @@ def write_obs_letkf( obs=np.array( [] ), time=datetime(2020,9,1,0 ), foot="10min
    
        obs_ = obs.flatten()
        obs_.tofile( fn )
+
+def prep_proj_multi_cartopy( fig, xfig=1, yfig=1, proj='none', latitude_true_scale=35.0,
+                             tlat1=30.0, tlat2=40.0, central_longitude=130.0, central_latitude=30.0 ):
+
+    if proj == 'none' or 'PlateCarree':
+       projection = ccrs.PlateCarree( central_longitude=central_longitude, )
+
+    elif proj == 'merc':
+       projection = ccrs.Mercator( latitude_true_scale=latitude_true_scale, )
+
+    elif proj == 'lcc':
+       projection = ccrs.LambertConformal( central_longitude=central_longitude,
+                                           central_latitude=central_latitude,
+                                           standard_parallels=[ tlat1, tlat2 ] )
+
+    ax_l = []
+    for i in range( 1, xfig*yfig+1 ):
+       ax_l.append( fig.add_subplot( yfig,xfig,i, projection=projection ) )
+
+    return( ax_l )
+
+def setup_grids_cartopy( ax, xticks=np.array([]), yticks=np.array([]), lw=0.5,
+                         fs=10, fc='k', color='k' ):
+    gl = ax.gridlines( crs=ccrs.PlateCarree(), linewidth=lw, color=color,
+                       draw_labels=True, auto_inline=False  )
+    #gl.xlabels_top = False
+    #gl.ylabels_right = False  
+    gl.top_labels = False
+    gl.right_labels = False  
+    gl.xlocator = mticker.FixedLocator( xticks )
+    gl.ylocator = mticker.FixedLocator( yticks )
+    if lw == 0.0:
+       gl.xlines = False
+       gl.ylines = False 
+    else:    
+       gl.xlines = True
+       gl.ylines = True
+    gl.xformatter = LONGITUDE_FORMATTER  
+    gl.yformatter = LATITUDE_FORMATTER
+
+    gl.xlabel_style = {'size': fs, 'color': fc, }
+    gl.ylabel_style = {'size': fs, 'color': fc, }
+
+def draw_rec_4p( ax, lon_l=[], lat_l=[], lc='k', lw=1.0, transform=None ):
+
+    ax.plot( [ lon_l[0], lon_l[0] ], [ lat_l[0], lat_l[1] ],  color=lc, lw=lw,
+             transform=transform )
+
+    ax.plot( [ lon_l[1], lon_l[1] ], [ lat_l[0], lat_l[1] ],  color=lc, lw=lw,
+             transform=transform )
+
+    ax.plot( [ lon_l[0], lon_l[1] ], [ lat_l[0], lat_l[0] ],  color=lc, lw=lw,
+             transform=transform )
+
+    ax.plot( [ lon_l[0], lon_l[1] ], [ lat_l[1], lat_l[1] ],  color=lc, lw=lw,
+             transform=transform )
+
+def get_besttrack( name='maysak' ):
+
+    lons = []
+    lats = []
+    slps = []
+    times = []
+
+    top = '/data_ballantine02/miyoshi-t/honda/SCALE-LETKF/scale-5.4.3/OUTPUT/TC2020/'
+
+    with open( top + name + '.txt' ) as f:
+       lines = f.readlines()
+       for line in lines:
+           data = line.split(' ')
+           if data[0] == '66666': 
+              continue
+
+           y2 = int( data[0][0:2] )
+           m2 = int( data[0][2:4] )
+           d2 = int( data[0][4:6] )
+           h2 = int( data[0][6:8] )
+           lat_ = np.round( float( data[3] )*0.1, decimals=1 ) 
+           lon_ = np.round( float( data[4] )*0.1, decimals=1 )
+           try:
+              slp_ = float( data[5] )
+           except:
+              slp_ = float( data[6] )
+           lats.append( lat_ )
+           lons.append( lon_ )
+           slps.append( slp_ )
+           times.append( datetime( y2+2000, m2, d2, h2 ) )
+      
+    return( lons, lats, slps, times )
+
+def read_score( top='', time=datetime( 2020, 9, 1, 0 ) ):
+    fn = os.path.join( top, 'score/score_{0:}.nc'.format( time.strftime('%Y%m%d%H%M%S' ) ) )
+
+    nc = Dataset( fn, "r", format="NETCDF4" )
+
+    data = {}
+
+    for nvar in nc.variables.keys():
+        if nvar == 'type':
+           continue
+        data[nvar] = nc.variables[nvar][:].tolist()
+    nc.close()
+
+    return( data )
