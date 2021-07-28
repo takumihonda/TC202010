@@ -15,10 +15,10 @@ quick = False
 
 
 
-def main( stime=datetime( 2020, 9, 5, 0, 0 ), ftime=datetime( 2020, 9, 5, 0, 0 ), top="", exp="" ):
+def main( stime=datetime( 2020, 9, 5, 0, 0 ), ftime=datetime( 2020, 9, 5, 0, 0 ), top="", exp="", dir='fcst_long_sno_np00001' ):
 
 
-    fn = '{0:}/{1:}/{2:}/fcst_sno_np00001/mean/p_history.pe000000.nc'.format( top, exp, stime.strftime('%Y%m%d%H%M%S') )
+    fn = '{0:}/{1:}/{2:}/{3:}/mean/p_history.pe000000.nc'.format( top, exp, stime.strftime('%Y%m%d%H%M%S'), dir )
     time_d1 = read_nc( nvar="time", fn=fn )[:]
 
     fsec = int( ( ftime - stime ).total_seconds() )
@@ -96,7 +96,12 @@ def main( stime=datetime( 2020, 9, 5, 0, 0 ), ftime=datetime( 2020, 9, 5, 0, 0 )
     tit1 = "{0:} & MSLP (hPa)".format( tvar )
     mslp_txt = "MSLP:{0:.1f} hPa".format( mslp_min )
 
-    ft_info = "Forecast (FT={0:0=3}h)".format( fth, )
+    if fth == 0 and fsec != 0.0:
+      ft_info = "Forecast (FT={0:0=4} s)".format( fsec, )
+      ofig = "Fcst_s{0:}_{1:0=4}s_WP_MSLP".format( stime.strftime('%m%d%H'), fsec, )
+    else:
+      ft_info = "Forecast (FT={0:0=3}h)".format( fth, )
+      ofig = "Fcst_s{0:}_{1:0=3}h_WP_MSLP".format( stime.strftime('%m%d%H'), fth, )
 
     tit_l = [
              tit1,
@@ -162,7 +167,6 @@ def main( stime=datetime( 2020, 9, 5, 0, 0 ), ftime=datetime( 2020, 9, 5, 0, 0 )
 
 #    fig.suptitle( "Analyzed MSLP (Pa)")
 
-    ofig = "Fcst_s{0:}_{1:0=3}h_WP_MSLP".format( stime.strftime('%m%d%H'), fth, )
     plot_or_save( quick=quick, opath="png/1p_fcst_wp/{0:}".format( exp ), ofig=ofig )   
 
 ###########
@@ -180,14 +184,21 @@ tint = timedelta( hours=12)
 stime = datetime( 2020, 8, 29, 12, 0 )
 etime = datetime( 2020, 9, 4, 0, 0 )
 
+dir = 'fcst_long_sno_np00001'
+
 #exp = "D1/D1_20210629"
 #stime0 = datetime( 2020, 8, 29, 0, 0 )
 #tint = timedelta( hours=24)
 #stime = datetime( 2020, 8, 29, 0, 0 )
 #etime = datetime( 2020, 9, 4, 0, 0 )
 
+dir = 'fcst_short_sno_np00001'
+stime = datetime( 2020, 8, 29, 6, 10 )
+#stime = datetime( 2020, 8, 29, 7, 0 )
+etime = stime
+
 time = stime
 while time <= etime:
-   main( stime=stime0, ftime=time, top=top, exp=exp )
+   main( stime=stime0, ftime=time, top=top, exp=exp, dir=dir )
    time += tint
 

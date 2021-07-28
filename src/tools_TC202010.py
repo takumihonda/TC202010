@@ -89,15 +89,15 @@ def cmap_Him8( vmin=200, vmax=300, dv=4, ucolor='gray', ocolor='k' ):
 
     return( cmap, levs )
 
-def plot_cbar( ax=None, shade=None, fig=None, ori='vertical', fs=7, levs=[] ):
+def plot_cbar( ax=None, shade=None, fig=None, ori='vertical', fs=7, levs=[],
+               cb_width=0.01, cb_height_rat=0.9, dx=0.005 ):
 
     if fig is None:
        ax_cb=None
     else:
        pos = ax.get_position()
-       cb_width = 0.01
-       cb_height = pos.height*0.9
-       ax_cb = fig.add_axes( [pos.x1+0.005, pos.y1-cb_height, cb_width, cb_height] )
+       cb_height = pos.height*cb_height_rat
+       ax_cb = fig.add_axes( [pos.x1+dx, pos.y1-cb_height, cb_width, cb_height] )
     cb = plt.colorbar( shade, cax=ax_cb,
                        orientation=ori, ticks=levs[::] )
     cb.ax.tick_params( labelsize=fs )
@@ -279,9 +279,15 @@ def prep_proj_multi_cartopy( fig, xfig=1, yfig=1, proj='none', latitude_true_sca
     return( ax_l )
 
 def setup_grids_cartopy( ax, xticks=np.array([]), yticks=np.array([]), lw=0.5,
-                         fs=10, fc='k', color='k' ):
+                         fs=10, fc='k', color='k', xfs=None, yfs=None ):
     gl = ax.gridlines( crs=ccrs.PlateCarree(), linewidth=lw, color=color,
                        draw_labels=True, auto_inline=False  )
+
+    if xfs is None:
+       xfs = fs
+    if yfs is None:
+       yfs = fs
+
     #gl.xlabels_top = False
     #gl.ylabels_right = False  
     gl.top_labels = False
@@ -297,8 +303,8 @@ def setup_grids_cartopy( ax, xticks=np.array([]), yticks=np.array([]), lw=0.5,
     gl.xformatter = LONGITUDE_FORMATTER  
     gl.yformatter = LATITUDE_FORMATTER
 
-    gl.xlabel_style = {'size': fs, 'color': fc, }
-    gl.ylabel_style = {'size': fs, 'color': fc, }
+    gl.xlabel_style = {'size': xfs, 'color': fc, }
+    gl.ylabel_style = {'size': yfs, 'color': fc, }
 
 def draw_rec_4p( ax, lon_l=[], lat_l=[], lc='k', lw=1.0, transform=None ):
 
@@ -361,3 +367,13 @@ def read_score( top='', time=datetime( 2020, 9, 1, 0 ) ):
     nc.close()
 
     return( data )
+
+def band2wavelength( band=13 ):
+    if band == 8:
+      return( 6.2 )
+    elif band == 9:
+      return( 6.9 )
+    elif band == 10:
+      return( 7.3 )
+    elif band == 13:
+      return( 10.4 )
